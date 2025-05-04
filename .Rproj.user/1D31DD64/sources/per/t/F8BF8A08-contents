@@ -1,0 +1,169 @@
+---
+title: "Programming Assignment 5"
+subtitle: "Data Science for Linguists"
+author: "Alexander Rogers"
+institute: "Rutgers University"
+date: "`r Sys.Date()`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+# Activate libraries
+
+```{r}
+#| message = FALSE
+library(tidyverse) # Here I am initializing all of the libraries I will need for this project. 
+library(here)
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+library(ds4ling)
+library(patchwork)
+library(lme4)
+library(lmerTest)
+```
+
+---
+# Load and tidy data
+
+```{r}
+#| message = FALSE
+dat <- read.csv(here("data_raw", "data.csv")) # reading the CSV file into r
+
+head(dat) # getting an idea of the dataset laayout and contents
+
+tdat <- dat |> # tidying data as needed
+  separate(
+    col = "date",
+    into = c("year", "day"),
+    sep = "-0"
+  )
+```
+
+---
+# Research Question 1
+Enjoyment as a function of class: descriptive statistics
+```{r}
+#| echo = FALSE
+tdat |>
+  group_by(year) |> # grouping by class year
+  summarise(
+    mean_e = mean(enjoy), # descriptive statistics for enjoyment measures
+    min_e = min(enjoy),
+    max_e = max(enjoy),
+    sd_e = sd(enjoy)
+  ) |>
+  knitr::kable() # outputting table of descriptive stats
+```
+Just from looking at the descriptive statistics we can see that the students in 2025 had a slightly higher average enjoyment (mean = 0.75) compared to students from 2023 (mean = 0.67) but that the 2025 class had a lower minimum enjoyment (min = 0.12) than the 2023 class (min = 0.17). That being said, both courses had nearly identical standard deviations (2025 sd = 0.24, 2023 sd = 0.25), so the variance is not that different. 
+
+---
+# RQ1
+Plot of enjoyment as a function of year.
+```{r}
+#| echo = FALSE
+tdat |> # creating a plot of distribution of enjoyment for each class
+  ggplot() +
+  aes(x = year, y = enjoy) +
+  geom_boxplot() +
+  stat_summary(fun=mean, geom="point", color="red", fill="red")  # I wanted to add the dot for the mean but forgot how to code it so I got the code after geom_boxplot() from https://r-graph-gallery.com/269-ggplot2-boxplot-with-average-value.html. 
+```
+---
+# Plot assessment
+From this plot we can tell that the 2025 group had a slightly higher average enjoyment, and that their distribution of enjoyment appears to overall be higher and more closely aligned. That said, they also have the lowest minimum. All together, the two years have very similar overall enjoyment with 2025 simply having a slightly higher average. 
+
+---
+# RQ1
+Modeling RQ1
+```{r}
+#| echo = FALSE
+mod1 <- glm(enjoy ~ 1 + year, data = tdat) #glm of enjoyment as a function of year.
+summary(mod1) # summary of model 1
+
+ds4ling::diagnosis(mod1) # testing assumptions for model 1
+
+```
+---
+```{r}
+tab_model(mod1) # simple table of model 1's output
+```
+
+---
+# Model discussion
+  I was having difficulty deciding how to model a continuous variable (enjoyment) as a function of a categorical variable (year) that only has two values. I tried running a linear mixed effects model with subject as a random effect but I wasn't happy with the output. In the end I ran a GLM with enjoyment as a function of year.
+  We can see from the model summary that for the yaer 2023, the mean enjoyment is approximately 0.67, and that it increases by 0.08 for the year 2025. R-squared is 0.023, which tells us that the model explains very little of the variance in the data. 
+  Along with that, we can tell by looking at the assumptions that the model is not the best fit for this research question. The fitted values plot in the assumptions does not have an even distribution. The data is skewed to the right of the mean, and the theoretical quantiles plot shows us that it is not linear. Since the variance explained is so low and none of the assumptions are met, we can infer that a different type of model is required for this question. That, or a model is not required at all, since we can answer our question just by comparing descriptive statistics.
+
+---
+Research Question 2
+# Difficulty as a function of time
+A priori hypothesis: The course content became more complex and in-depth as the semester continued. Because of that, I predict that as time passed, reported difficulty increased overall. I predict that some students will either have continued to feel like the content wasn't too difficult or will have simply answered randomly so there will be outliers, but overall the difficulty will increase with time.
+
+---
+
+RQ2
+# Table of descriptive statistics
+```{r}
+#| echo = FALSE
+tdat |>
+  group_by(week) |> # grouping by week to see descriptive stats for each week
+  summarise(
+    mean_d = mean(difficulty), # descriptive statistics for difficulty measures
+    min_d = min(difficulty),
+    max_d = max(difficulty),
+    sd_d = sd(difficulty)
+  ) |>
+  knitr::kable() # outputting table of descriptive stats
+```
+---
+# Discussing RQ2 descriptive statistics
+Honestly, the table of descriptive stats does not tell us much. While week 11 is higher than week 1, it is lower than preceding weeks. The difficulty appears to go up and down as the semester progresses, which tells us that difficulty depends more on the content of a given day than the overall progression of the class.
+---
+# RQ2
+Creating a plot of the data
+```{r}
+#| echo = FALSE
+tdat |> # creating a boxplot of difficulty as a function of week
+  ggplot() +
+  aes(x = week, y = difficulty, group = week) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point") # the point in each boxplot shows the mean data point of difficulty for each week.
+```
+From this plot we can see that difficulty operated as a wave that gradually went up. Difficulty started low, and had a cycle of increasing difficulty before it decreased again, only to then continue increasing. Overall, the difficulty at the end was higher than at the start, but was lower than the preceding weeks due to the shape of the difficulty wave.
+
+---
+# RQ2
+Modeling RQ2
+```{r}
+#| echo = FALSE
+mod2 <- lmer(difficulty ~ 1 | week, data = tdat) # linear regression model demonstrating the relationship between difficulty and time. consider adding subject as a random effect
+summary(mod2)
+
+mod3 <- lmer(difficulty ~ 1 + week + (1 | id), data = tdat) #including fixed effects for time
+summary(mod3)
+
+mod4 <- lmer(difficulty ~ 1 + week + (1 + week | id), data = tdat) # creating nested model comparisons by adding additive models and adding random effects
+summary(mod4)
+anova(mod2, mod3, mod4, test = "Chisq") # finding the best model for the RQ using a nested model comparison and a chi-squared test.
+```
+Model 3 appears to have a lower p-value in the nested model comparison. This is the model with subject as a random intercept but without a random slope of week. This tells us that the model without the random slope is the stronger predictor.
+---
+RQ2
+# Model summary
+```{r}
+summary(mod3) #summary of the best-fit model mod3, because the NMC told us this is better than mod4
+plot(resid(mod3))
+```
+---
+RQ2
+# Results write-up
+  For this research question I ran a nested model comparison of multiple linear mixed effects models to assess difficulty as a function of time (week of class). I designed a null model first with only the target variable, then a partial-pooling model added fixed effects of week and random intercepts of subject (id), and finally a full model with fixed effects of week, random slope for week, and random intercept for subject. Then the nested model comparison (ANOVA) demonstrated that model 3, without random slopes, was the best fit based on the p-value from the Chi-squared test (p = 0.00021 < 0.00039).
+  
+  I ran out of time before I could actually describe the model results.
+  
+  I had difficulty testing the assumptions for this model. The diagnosis function from ds4ling package did not run, so I attempted to find other ways to test the assumptions on stackoverflow. The Linearity assumption was not supported, and I know this by looking at the residuals plot. It is not linear, but rather a seemingly random set of points with a somewhat visible wave. As it is not at all linear, we know that this assumption was not met. I ran out of time before I could test the remaining assumptions. 
+

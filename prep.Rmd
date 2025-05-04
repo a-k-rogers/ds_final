@@ -1,0 +1,70 @@
+---
+title: "prep doc"
+author: "Alexander Rogers"
+date: "2025-05-03"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(here)
+library(lmerTest)
+library(lme4)
+```
+
+```{r}
+gram <- read_csv(here("data_raw", "grammatical.csv"))
+num <- read_csv(here("data_raw", "number_vio.csv"))
+gen <- read_csv(here("data_raw", "gender_vio.csv"))
+```
+
+```{r}
+gram2 <- subset(gram, select = c("PARTICIPANT", "AGE OF ACQUISITION", "PROFICIENCY GROUP", "PROFICIENCY TEST SCORE", "CP3", "CPZ", "CP4", "P3", "PZ", "P4", "O1", "OZ", "O2"))
+
+num2 <- subset(num, select = c("PARTICIPANT", "AGE OF ACQUISITION", "PROFICIENCY GROUP", "PROFICIENCY TEST SCORE", "CP3", "CPZ", "CP4", "P3", "PZ", "P4", "O1", "OZ", "O2"))
+
+gen2 <- subset(gen, select = c("PARTICIPANT", "AGE OF ACQUISITION", "PROFICIENCY GROUP", "PROFICIENCY TEST SCORE", "CP3", "CPZ", "CP4", "P3", "PZ", "P4", "O1", "OZ", "O2"))
+```
+
+```{r}
+write_csv(gram3, here("data_tidy", "tidy_grammatical.csv"))
+write_csv(num3, here("data_tidy", "tidy_number.csv"))
+write_csv(gen3, here("data_tidy", "tidy_gender.csv"))
+```
+
+```{r}
+gram3 <- gram2 |>
+  mutate(
+    grandmean = ((CP3 + CPZ + CP4 + P3 + PZ + P4 + O1 + OZ + O2) / 9)
+  )
+
+gen3 <- gen2 |>
+  mutate(
+    grandmean = ((CP3 + CPZ + CP4 + P3 + PZ + P4 + O1 + OZ + O2) / 9)
+  )
+
+num3 <- num2 |>
+  mutate(
+    grandmean = ((CP3 + CPZ + CP4 + P3 + PZ + P4 + O1 + OZ + O2) / 9)
+  )
+```
+
+```{r}
+dat <- read_csv(here("data_tidy", "grand_means.csv"))
+```
+
+```{r}
+dat2 <- dat |>
+  pivot_longer(
+    cols = ends_with("mean"),
+    names_to = "condition",
+    values_to = "mean"
+  ) |>
+  mutate(
+    condition = recode(condition, gen_mean = "gender", gram_mean = "grammatical", num_mean = "number")
+  )
+```
+
+```{r}
+write_csv(dat2, here("data_tidy", "final_tidy.csv"))
+```
+
