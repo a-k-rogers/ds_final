@@ -119,7 +119,7 @@ mod_fp <- lmer(PROFICIENCY.TEST.SCORE ~ 1 + mean + (1 + mean | PARTICIPANT), dat
 
 anova(mod_null, mod_pp, mod_fp, test = "Chisq")
 ```
-The anova run on the nested models demonstrated that the partial-pooling model is the best for the data. Thus, I will discuss the results of that model in the following slides.
+The anova run on the nested models helped to demonstrate that I ran the wrong kind of model, as nothing was significant. I will need to figure out what kind of model to run in place of these. I don't have repeated measures, so an lmer was not the correct type. Perhaps a simple linear model will be best. Everything that follows is based on the wrong models. Sorry.
 
 ---
 #Results: Assumptions
