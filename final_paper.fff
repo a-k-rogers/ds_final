@@ -1,0 +1,5 @@
+\begin{figure*}[hbt]
+\ifnextchar[{\eatarg}{}
+[H]
+\includegraphics[width=\linewidth]{figs/mod_tab} \caption{Model summary}\label{fig:fig-mod-tab}
+\end{figure*}

@@ -143,21 +143,23 @@ tab_model(mod_pp)
 ---
 #Results: Visualizations
 .pull-left[
-```{r, echo = FALSE, message = FALSE, warning = FALSE}
-df |>
+```{r, echo = FALSE, message = FALSE, warning = FALSE, out.width="100%"}
+require(gridExtra) # I wanted my plots to be side by side so I found this package on StackOverflow
+plot1 <- df |>
   ggplot() +
   aes(x = PROFICIENCY.TEST.SCORE, y = mean) +
   geom_point() +
   geom_smooth(method = "lm") +
-  facet_wrap(vars(condition))
-```
-]
-.pull-right[
-```{r, echo = FALSE, message = FALSE, warning = FALSE}
-df |>
+  facet_wrap(vars(condition)) +
+  labs(x = "Proficiency", y = "Mean Amplitude")
+
+plot2 <- df |>
   ggplot() +
   aes(x = condition, y = mean) +
-  geom_boxplot()
+  geom_boxplot() +
+  labs(x = "Condition", y = "Grand Mean Amplitude")
+
+grid.arrange(plot1, plot2, ncol=2)
 ```
 
 ]
